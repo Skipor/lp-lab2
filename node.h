@@ -24,7 +24,9 @@ typedef std::vector<std::unique_ptr<NStatement>> StatementList;
 typedef std::vector<std::unique_ptr<NExpression>> ExpressionList;
 typedef std::vector<std::unique_ptr<NBaseType>> TypeList;
 typedef std::vector<std::unique_ptr<NPattern>> PatternList;
-typedef std::vector<std::pair<std::unique_ptr<NExpression>, std::unique_ptr<NExpression>>> CaseToExprList;
+
+typedef std::pair<std::unique_ptr<NExpression>, std::unique_ptr<NExpression>> CaseToExpr;
+typedef std::vector<CaseToExpr> CaseToExprList;
 
 
 //typedef std::vector<NVariableDeclaration*> VariableList;
@@ -217,27 +219,29 @@ public:
 };
 
 
-class NVariableDeclaration : public NStatement {
+//class NVariableDeclaration : public NStatement {
+//public:
+//  const NIdentifier& type;
+//  NIdentifier& id;
+//  NExpression* assignmentExpr;
+//
+//  NVariableDeclaration(const NIdentifier& type, NIdentifier& id) :
+//      type(type), id(id) { }
+//
+//  NVariableDeclaration(const NIdentifier& type, NIdentifier& id, NExpression* assignmentExpr) :
+//      type(type), id(id), assignmentExpr(assignmentExpr) { }
+//
+//};
+
+class NDefinition : public NStatement {
+
+
 public:
-  const NIdentifier& type;
-  NIdentifier& id;
-  NExpression* assignmentExpr;
+  NDefinition() = default;
+  NDefinition(NDefinition&&) = default;
 
-  NVariableDeclaration(const NIdentifier& type, NIdentifier& id) :
-      type(type), id(id) { }
-
-  NVariableDeclaration(const NIdentifier& type, NIdentifier& id, NExpression* assignmentExpr) :
-      type(type), id(id), assignmentExpr(assignmentExpr) { }
-
-};
-
-class NDefenition : public NStatement {
-
-
-public:
-  NDefenition() = default;
-
-  NDefenition(NIdentifier* id) : id_(id) {
+  NDefinition(NIdentifier* id, PatternList * patterns) : id_(id), patterns_(std::move(*patterns)) {
+    delete patterns;
   }
 
   NIdentifier* id() const {
@@ -257,15 +261,22 @@ protected:
   PatternList patterns_;
 };
 
-//class NConstDef : public NDefenition {
+//class NConstDef : public NDefinition {
 //protected:
 //  std::unique_ptr<NConstantBase> value_;
 //
 //};
 
-class NFunctionPatternDef : public NDefenition {
+class NFunctionPatternDef : public NDefinition {
 
 public:
+  NFunctionPatternDef(NDefinition* base, NExpression * expr)
+      : NDefinition(std::move(*base)), expression_(expr) {
+    delete base;
+  }
+  NFunctionPatternDef(NIdentifier* id, PatternList * patterns, NExpression * expr)
+      : NDefinition(id, patterns), expression_(expr) {
+  }
   NExpression* expression() {
     return expression_.get();
   }
@@ -277,19 +288,29 @@ public:
 
 protected:
   std::unique_ptr<NExpression> expression_;
-
 };
 
-class NFunctionCaseDef : public NDefenition {
+class NFunctionCaseDef : public NDefinition {
+
+  NFunctionCaseDef(NDefinition* base, CaseToExprList * case_to_expr_list)
+      : NDefinition(std::move(*base)), case_to_expr_(std::move(*case_to_expr_list)) {
+    delete base;
+    delete case_to_expr_list;
+  }
+
+  NFunctionCaseDef(NIdentifier* id, PatternList * patterns, CaseToExprList * case_to_expr_list)
+    : NDefinition(id, patterns), case_to_expr_(std::move(*case_to_expr_list)) {
+    delete case_to_expr_list;
+  }
 
 public:
+
   CaseToExprList & case_to_expr() {
     return case_to_expr_;
   };
 
 protected:
   CaseToExprList case_to_expr_;
-
 
 };
 
