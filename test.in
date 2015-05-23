@@ -12,7 +12,7 @@ and true true = true
 and _ _ = false
 
 or :: Bool -> Bool -> Bool
-or false false = false
+or true false = false
 or _ _ = true
 
 ifInt :: Bool -> Integer -> Integer -> Integer

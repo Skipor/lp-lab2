@@ -1,7 +1,3 @@
-State 9 conflicts: 5 shift/reduce
-State 59 conflicts: 10 shift/reduce
-
-
 Grammar
 
     0 $accept: program $end
@@ -25,18 +21,18 @@ Grammar
 
    13 func_pattern_args: func_pattern_args func_pattern_arg
    14                  | func_pattern_arg
-   15                  | /* empty */
 
-   16 func_pattern_arg: TBLANK
-   17                 | numeric
-   18                 | ident
+   15 func_pattern_arg: TBLANK
+   16                 | numeric
+   17                 | ident
 
-   19 case: TCASE expr TEQUAL expr TENDL
+   18 case: TCASE expr TEQUAL expr TENDL
 
-   20 case_list: case
-   21          | case_list TINTEND case
+   19 case_list: case
+   20          | case_list TINTEND case
 
-   22 func_pattern: ident func_pattern_args
+   21 func_pattern: ident func_pattern_args
+   22             | ident
 
    23 func_bind: func_pattern TEQUAL expr TENDL
 
@@ -53,54 +49,60 @@ Grammar
    30 expr: ident TLPAREN call_args TRPAREN
    31     | ident
    32     | numeric
-   33     | expr bin_operator expr
-   34     | TLPAREN expr TRPAREN
+   33     | expr equ_op expr
+   34     | expr cmp_op expr
+   35     | expr add_op expr
+   36     | expr mul_op expr
+   37     | TLPAREN expr TRPAREN
 
-   35 call_args: /* empty */
-   36          | expr
-   37          | call_args TCOMMA expr
+   38 call_args: /* empty */
+   39          | expr
+   40          | call_args TCOMMA expr
 
-   38 bin_operator: TCEQ
-   39             | TCNE
-   40             | TCLT
-   41             | TCLE
-   42             | TCGT
-   43             | TCGE
-   44             | TMINUS
-   45             | TPLUS
-   46             | TDIV
-   47             | TMUL
+   41 equ_op: TCEQ
+   42       | TCNE
+
+   43 cmp_op: TCLT
+   44       | TCLE
+   45       | TCGT
+   46       | TCGE
+
+   47 add_op: TPLUS
+   48       | TMINUS
+
+   49 mul_op: TMUL
+   50       | TDIV
 
 
 Terminals, with rules where they appear
 
 $end (0) 0
 error (256)
-TINTEND (258) 21
+TINTEND (258) 20
 TTNAME (259) 26
 TIDENTIFIER (260) 25
 TINTEGER (261) 27
 TDOUBLE (262) 28
 TBOOL (263) 29
-TCEQ (264) 38
-TCNE (265) 39
-TCLT (266) 40
-TCLE (267) 41
-TCGT (268) 42
-TCGE (269) 43
-TEQUAL (270) 19 23
-TLPAREN (271) 10 30 34
-TRPAREN (272) 10 30 34
-TCOMMA (273) 37
-TPLUS (274) 45
-TMINUS (275) 44
-TMUL (276) 47
-TDIV (277) 46
-TBLANK (278) 16
+TCEQ (264) 41
+TCNE (265) 42
+TCLT (266) 43
+TCLE (267) 44
+TCGT (268) 45
+TCGE (269) 46
+TEQUAL (270) 18 23
+TLPAREN (271) 10 30 37
+TRPAREN (272) 10 30 37
+TCOMMA (273) 40
+TPLUS (274) 47
+TMINUS (275) 48
+TMUL (276) 49
+TDIV (277) 50
+TBLANK (278) 15
 TTYPEOF (279) 9
-TCASE (280) 19
+TCASE (280) 18
 TARROW (281) 11
-TENDL (282) 5 9 19 23
+TENDL (282) 5 9 18 23
 
 
 Nonterminals, with rules where they appear
@@ -118,31 +120,38 @@ type_decl (32)
 type (33)
     on left: 10 11 12, on right: 9 10 11
 func_pattern_args (34)
-    on left: 13 14 15, on right: 13 22
+    on left: 13 14, on right: 13 21
 func_pattern_arg (35)
-    on left: 16 17 18, on right: 13 14
+    on left: 15 16 17, on right: 13 14
 case (36)
-    on left: 19, on right: 20 21
+    on left: 18, on right: 19 20
 case_list (37)
-    on left: 20 21, on right: 21 24
+    on left: 19 20, on right: 20 24
 func_pattern (38)
-    on left: 22, on right: 23 24
+    on left: 21 22, on right: 23 24
 func_bind (39)
     on left: 23, on right: 7
 func_case (40)
     on left: 24, on right: 8
 ident (41)
-    on left: 25, on right: 9 18 22 30 31
+    on left: 25, on right: 9 17 21 22 30 31
 name_of_type (42)
     on left: 26, on right: 12
 numeric (43)
-    on left: 27 28 29, on right: 17 32
+    on left: 27 28 29, on right: 16 32
 expr (44)
-    on left: 30 31 32 33 34, on right: 19 23 33 34 36 37
+    on left: 30 31 32 33 34 35 36 37, on right: 18 23 33 34 35 36 37
+    39 40
 call_args (45)
-    on left: 35 36 37, on right: 30 37
-bin_operator (46)
-    on left: 38 39 40 41 42 43 44 45 46 47, on right: 33
+    on left: 38 39 40, on right: 30 40
+equ_op (46)
+    on left: 41 42, on right: 33
+cmp_op (47)
+    on left: 43 44 45 46, on right: 34
+add_op (48)
+    on left: 47 48, on right: 35
+mul_op (49)
+    on left: 49 50, on right: 36
 
 
 state 0
@@ -239,7 +248,8 @@ state 8
 state 9
 
     9 type_decl: ident . TTYPEOF type TENDL
-   22 func_pattern: ident . func_pattern_args
+   21 func_pattern: ident . func_pattern_args
+   22             | ident .
 
     TIDENTIFIER  shift, and go to state 1
     TINTEGER     shift, and go to state 17
@@ -248,12 +258,7 @@ state 9
     TBLANK       shift, and go to state 20
     TTYPEOF      shift, and go to state 21
 
-    TIDENTIFIER  [reduce using rule 15 (func_pattern_args)]
-    TINTEGER     [reduce using rule 15 (func_pattern_args)]
-    TDOUBLE      [reduce using rule 15 (func_pattern_args)]
-    TBOOL        [reduce using rule 15 (func_pattern_args)]
-    TBLANK       [reduce using rule 15 (func_pattern_args)]
-    $default     reduce using rule 15 (func_pattern_args)
+    $default  reduce using rule 22 (func_pattern)
 
     func_pattern_args  go to state 22
     func_pattern_arg   go to state 23
@@ -299,7 +304,7 @@ state 13
 
 state 14
 
-   19 case: TCASE . expr TEQUAL expr TENDL
+   18 case: TCASE . expr TEQUAL expr TENDL
 
     TIDENTIFIER  shift, and go to state 1
     TINTEGER     shift, and go to state 17
@@ -314,14 +319,14 @@ state 14
 
 state 15
 
-   20 case_list: case .
+   19 case_list: case .
 
-    $default  reduce using rule 20 (case_list)
+    $default  reduce using rule 19 (case_list)
 
 
 state 16
 
-   21 case_list: case_list . TINTEND case
+   20 case_list: case_list . TINTEND case
    24 func_case: func_pattern case_list .
 
     TINTEND  shift, and go to state 31
@@ -352,9 +357,9 @@ state 19
 
 state 20
 
-   16 func_pattern_arg: TBLANK .
+   15 func_pattern_arg: TBLANK .
 
-    $default  reduce using rule 16 (func_pattern_arg)
+    $default  reduce using rule 15 (func_pattern_arg)
 
 
 state 21
@@ -371,7 +376,7 @@ state 21
 state 22
 
    13 func_pattern_args: func_pattern_args . func_pattern_arg
-   22 func_pattern: ident func_pattern_args .
+   21 func_pattern: ident func_pattern_args .
 
     TIDENTIFIER  shift, and go to state 1
     TINTEGER     shift, and go to state 17
@@ -379,7 +384,7 @@ state 22
     TBOOL        shift, and go to state 19
     TBLANK       shift, and go to state 20
 
-    $default  reduce using rule 22 (func_pattern)
+    $default  reduce using rule 21 (func_pattern)
 
     func_pattern_arg  go to state 36
     ident             go to state 24
@@ -395,21 +400,21 @@ state 23
 
 state 24
 
-   18 func_pattern_arg: ident .
-
-    $default  reduce using rule 18 (func_pattern_arg)
-
-
-state 25
-
-   17 func_pattern_arg: numeric .
+   17 func_pattern_arg: ident .
 
     $default  reduce using rule 17 (func_pattern_arg)
 
 
+state 25
+
+   16 func_pattern_arg: numeric .
+
+    $default  reduce using rule 16 (func_pattern_arg)
+
+
 state 26
 
-   34 expr: TLPAREN . expr TRPAREN
+   37 expr: TLPAREN . expr TRPAREN
 
     TIDENTIFIER  shift, and go to state 1
     TINTEGER     shift, and go to state 17
@@ -442,7 +447,10 @@ state 28
 state 29
 
    23 func_bind: func_pattern TEQUAL expr . TENDL
-   33 expr: expr . bin_operator expr
+   33 expr: expr . equ_op expr
+   34     | expr . cmp_op expr
+   35     | expr . add_op expr
+   36     | expr . mul_op expr
 
     TCEQ    shift, and go to state 39
     TCNE    shift, and go to state 40
@@ -456,13 +464,19 @@ state 29
     TDIV    shift, and go to state 48
     TENDL   shift, and go to state 49
 
-    bin_operator  go to state 50
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53
 
 
 state 30
 
-   19 case: TCASE expr . TEQUAL expr TENDL
-   33 expr: expr . bin_operator expr
+   18 case: TCASE expr . TEQUAL expr TENDL
+   33 expr: expr . equ_op expr
+   34     | expr . cmp_op expr
+   35     | expr . add_op expr
+   36     | expr . mul_op expr
 
     TCEQ    shift, and go to state 39
     TCNE    shift, and go to state 40
@@ -470,22 +484,25 @@ state 30
     TCLE    shift, and go to state 42
     TCGT    shift, and go to state 43
     TCGE    shift, and go to state 44
-    TEQUAL  shift, and go to state 51
+    TEQUAL  shift, and go to state 54
     TPLUS   shift, and go to state 45
     TMINUS  shift, and go to state 46
     TMUL    shift, and go to state 47
     TDIV    shift, and go to state 48
 
-    bin_operator  go to state 50
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53
 
 
 state 31
 
-   21 case_list: case_list TINTEND . case
+   20 case_list: case_list TINTEND . case
 
     TCASE  shift, and go to state 14
 
-    case  go to state 52
+    case  go to state 55
 
 
 state 32
@@ -502,7 +519,7 @@ state 33
     TTNAME   shift, and go to state 32
     TLPAREN  shift, and go to state 33
 
-    type          go to state 53
+    type          go to state 56
     name_of_type  go to state 35
 
 
@@ -511,8 +528,8 @@ state 34
     9 type_decl: ident TTYPEOF type . TENDL
    11 type: type . TARROW type
 
-    TARROW  shift, and go to state 54
-    TENDL   shift, and go to state 55
+    TARROW  shift, and go to state 57
+    TENDL   shift, and go to state 58
 
 
 state 35
@@ -531,8 +548,11 @@ state 36
 
 state 37
 
-   33 expr: expr . bin_operator expr
-   34     | TLPAREN expr . TRPAREN
+   33 expr: expr . equ_op expr
+   34     | expr . cmp_op expr
+   35     | expr . add_op expr
+   36     | expr . mul_op expr
+   37     | TLPAREN expr . TRPAREN
 
     TCEQ     shift, and go to state 39
     TCNE     shift, and go to state 40
@@ -540,13 +560,16 @@ state 37
     TCLE     shift, and go to state 42
     TCGT     shift, and go to state 43
     TCGE     shift, and go to state 44
-    TRPAREN  shift, and go to state 56
+    TRPAREN  shift, and go to state 59
     TPLUS    shift, and go to state 45
     TMINUS   shift, and go to state 46
     TMUL     shift, and go to state 47
     TDIV     shift, and go to state 48
 
-    bin_operator  go to state 50
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53
 
 
 state 38
@@ -559,82 +582,82 @@ state 38
     TBOOL        shift, and go to state 19
     TLPAREN      shift, and go to state 26
 
-    $default  reduce using rule 35 (call_args)
+    $default  reduce using rule 38 (call_args)
 
     ident      go to state 27
     numeric    go to state 28
-    expr       go to state 57
-    call_args  go to state 58
+    expr       go to state 60
+    call_args  go to state 61
 
 
 state 39
 
-   38 bin_operator: TCEQ .
+   41 equ_op: TCEQ .
 
-    $default  reduce using rule 38 (bin_operator)
+    $default  reduce using rule 41 (equ_op)
 
 
 state 40
 
-   39 bin_operator: TCNE .
+   42 equ_op: TCNE .
 
-    $default  reduce using rule 39 (bin_operator)
+    $default  reduce using rule 42 (equ_op)
 
 
 state 41
 
-   40 bin_operator: TCLT .
+   43 cmp_op: TCLT .
 
-    $default  reduce using rule 40 (bin_operator)
+    $default  reduce using rule 43 (cmp_op)
 
 
 state 42
 
-   41 bin_operator: TCLE .
+   44 cmp_op: TCLE .
 
-    $default  reduce using rule 41 (bin_operator)
+    $default  reduce using rule 44 (cmp_op)
 
 
 state 43
 
-   42 bin_operator: TCGT .
+   45 cmp_op: TCGT .
 
-    $default  reduce using rule 42 (bin_operator)
+    $default  reduce using rule 45 (cmp_op)
 
 
 state 44
 
-   43 bin_operator: TCGE .
+   46 cmp_op: TCGE .
 
-    $default  reduce using rule 43 (bin_operator)
+    $default  reduce using rule 46 (cmp_op)
 
 
 state 45
 
-   45 bin_operator: TPLUS .
+   47 add_op: TPLUS .
 
-    $default  reduce using rule 45 (bin_operator)
+    $default  reduce using rule 47 (add_op)
 
 
 state 46
 
-   44 bin_operator: TMINUS .
+   48 add_op: TMINUS .
 
-    $default  reduce using rule 44 (bin_operator)
+    $default  reduce using rule 48 (add_op)
 
 
 state 47
 
-   47 bin_operator: TMUL .
+   49 mul_op: TMUL .
 
-    $default  reduce using rule 47 (bin_operator)
+    $default  reduce using rule 49 (mul_op)
 
 
 state 48
 
-   46 bin_operator: TDIV .
+   50 mul_op: TDIV .
 
-    $default  reduce using rule 46 (bin_operator)
+    $default  reduce using rule 50 (mul_op)
 
 
 state 49
@@ -646,7 +669,7 @@ state 49
 
 state 50
 
-   33 expr: expr bin_operator . expr
+   33 expr: expr equ_op . expr
 
     TIDENTIFIER  shift, and go to state 1
     TINTEGER     shift, and go to state 17
@@ -656,12 +679,12 @@ state 50
 
     ident    go to state 27
     numeric  go to state 28
-    expr     go to state 59
+    expr     go to state 62
 
 
 state 51
 
-   19 case: TCASE expr TEQUAL . expr TENDL
+   34 expr: expr cmp_op . expr
 
     TIDENTIFIER  shift, and go to state 1
     TINTEGER     shift, and go to state 17
@@ -671,158 +694,42 @@ state 51
 
     ident    go to state 27
     numeric  go to state 28
-    expr     go to state 60
+    expr     go to state 63
 
 
 state 52
 
-   21 case_list: case_list TINTEND case .
+   35 expr: expr add_op . expr
 
-    $default  reduce using rule 21 (case_list)
+    TIDENTIFIER  shift, and go to state 1
+    TINTEGER     shift, and go to state 17
+    TDOUBLE      shift, and go to state 18
+    TBOOL        shift, and go to state 19
+    TLPAREN      shift, and go to state 26
+
+    ident    go to state 27
+    numeric  go to state 28
+    expr     go to state 64
 
 
 state 53
 
-   10 type: TLPAREN type . TRPAREN
-   11     | type . TARROW type
+   36 expr: expr mul_op . expr
 
-    TRPAREN  shift, and go to state 61
-    TARROW   shift, and go to state 54
+    TIDENTIFIER  shift, and go to state 1
+    TINTEGER     shift, and go to state 17
+    TDOUBLE      shift, and go to state 18
+    TBOOL        shift, and go to state 19
+    TLPAREN      shift, and go to state 26
+
+    ident    go to state 27
+    numeric  go to state 28
+    expr     go to state 65
 
 
 state 54
 
-   11 type: type TARROW . type
-
-    TTNAME   shift, and go to state 32
-    TLPAREN  shift, and go to state 33
-
-    type          go to state 62
-    name_of_type  go to state 35
-
-
-state 55
-
-    9 type_decl: ident TTYPEOF type TENDL .
-
-    $default  reduce using rule 9 (type_decl)
-
-
-state 56
-
-   34 expr: TLPAREN expr TRPAREN .
-
-    $default  reduce using rule 34 (expr)
-
-
-state 57
-
-   33 expr: expr . bin_operator expr
-   36 call_args: expr .
-
-    TCEQ    shift, and go to state 39
-    TCNE    shift, and go to state 40
-    TCLT    shift, and go to state 41
-    TCLE    shift, and go to state 42
-    TCGT    shift, and go to state 43
-    TCGE    shift, and go to state 44
-    TPLUS   shift, and go to state 45
-    TMINUS  shift, and go to state 46
-    TMUL    shift, and go to state 47
-    TDIV    shift, and go to state 48
-
-    $default  reduce using rule 36 (call_args)
-
-    bin_operator  go to state 50
-
-
-state 58
-
-   30 expr: ident TLPAREN call_args . TRPAREN
-   37 call_args: call_args . TCOMMA expr
-
-    TRPAREN  shift, and go to state 63
-    TCOMMA   shift, and go to state 64
-
-
-state 59
-
-   33 expr: expr . bin_operator expr
-   33     | expr bin_operator expr .
-
-    TCEQ    shift, and go to state 39
-    TCNE    shift, and go to state 40
-    TCLT    shift, and go to state 41
-    TCLE    shift, and go to state 42
-    TCGT    shift, and go to state 43
-    TCGE    shift, and go to state 44
-    TPLUS   shift, and go to state 45
-    TMINUS  shift, and go to state 46
-    TMUL    shift, and go to state 47
-    TDIV    shift, and go to state 48
-
-    TCEQ      [reduce using rule 33 (expr)]
-    TCNE      [reduce using rule 33 (expr)]
-    TCLT      [reduce using rule 33 (expr)]
-    TCLE      [reduce using rule 33 (expr)]
-    TCGT      [reduce using rule 33 (expr)]
-    TCGE      [reduce using rule 33 (expr)]
-    TPLUS     [reduce using rule 33 (expr)]
-    TMINUS    [reduce using rule 33 (expr)]
-    TMUL      [reduce using rule 33 (expr)]
-    TDIV      [reduce using rule 33 (expr)]
-    $default  reduce using rule 33 (expr)
-
-    bin_operator  go to state 50
-
-
-state 60
-
-   19 case: TCASE expr TEQUAL expr . TENDL
-   33 expr: expr . bin_operator expr
-
-    TCEQ    shift, and go to state 39
-    TCNE    shift, and go to state 40
-    TCLT    shift, and go to state 41
-    TCLE    shift, and go to state 42
-    TCGT    shift, and go to state 43
-    TCGE    shift, and go to state 44
-    TPLUS   shift, and go to state 45
-    TMINUS  shift, and go to state 46
-    TMUL    shift, and go to state 47
-    TDIV    shift, and go to state 48
-    TENDL   shift, and go to state 65
-
-    bin_operator  go to state 50
-
-
-state 61
-
-   10 type: TLPAREN type TRPAREN .
-
-    $default  reduce using rule 10 (type)
-
-
-state 62
-
-   11 type: type . TARROW type
-   11     | type TARROW type .
-
-    TARROW  shift, and go to state 54
-
-    $default  reduce using rule 11 (type)
-
-
-state 63
-
-   30 expr: ident TLPAREN call_args TRPAREN .
-
-    $default  reduce using rule 30 (expr)
-
-
-state 64
-
-   37 call_args: call_args TCOMMA . expr
+   18 case: TCASE expr TEQUAL . expr TENDL
 
     TIDENTIFIER  shift, and go to state 1
     TINTEGER     shift, and go to state 17
@@ -835,17 +742,54 @@ state 64
     expr     go to state 66
 
 
-state 65
+state 55
 
-   19 case: TCASE expr TEQUAL expr TENDL .
+   20 case_list: case_list TINTEND case .
 
-    $default  reduce using rule 19 (case)
+    $default  reduce using rule 20 (case_list)
 
 
-state 66
+state 56
 
-   33 expr: expr . bin_operator expr
-   37 call_args: call_args TCOMMA expr .
+   10 type: TLPAREN type . TRPAREN
+   11     | type . TARROW type
+
+    TRPAREN  shift, and go to state 67
+    TARROW   shift, and go to state 57
+
+
+state 57
+
+   11 type: type TARROW . type
+
+    TTNAME   shift, and go to state 32
+    TLPAREN  shift, and go to state 33
+
+    type          go to state 68
+    name_of_type  go to state 35
+
+
+state 58
+
+    9 type_decl: ident TTYPEOF type TENDL .
+
+    $default  reduce using rule 9 (type_decl)
+
+
+state 59
+
+   37 expr: TLPAREN expr TRPAREN .
+
+    $default  reduce using rule 37 (expr)
+
+
+state 60
+
+   33 expr: expr . equ_op expr
+   34     | expr . cmp_op expr
+   35     | expr . add_op expr
+   36     | expr . mul_op expr
+   39 call_args: expr .
 
     TCEQ    shift, and go to state 39
     TCNE    shift, and go to state 40
@@ -858,6 +802,198 @@ state 66
     TMUL    shift, and go to state 47
     TDIV    shift, and go to state 48
 
-    $default  reduce using rule 37 (call_args)
+    $default  reduce using rule 39 (call_args)
 
-    bin_operator  go to state 50
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53
+
+
+state 61
+
+   30 expr: ident TLPAREN call_args . TRPAREN
+   40 call_args: call_args . TCOMMA expr
+
+    TRPAREN  shift, and go to state 69
+    TCOMMA   shift, and go to state 70
+
+
+state 62
+
+   33 expr: expr . equ_op expr
+   33     | expr equ_op expr .
+   34     | expr . cmp_op expr
+   35     | expr . add_op expr
+   36     | expr . mul_op expr
+
+    TCLT    shift, and go to state 41
+    TCLE    shift, and go to state 42
+    TCGT    shift, and go to state 43
+    TCGE    shift, and go to state 44
+    TPLUS   shift, and go to state 45
+    TMINUS  shift, and go to state 46
+    TMUL    shift, and go to state 47
+    TDIV    shift, and go to state 48
+
+    $default  reduce using rule 33 (expr)
+
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53
+
+
+state 63
+
+   33 expr: expr . equ_op expr
+   34     | expr . cmp_op expr
+   34     | expr cmp_op expr .
+   35     | expr . add_op expr
+   36     | expr . mul_op expr
+
+    TPLUS   shift, and go to state 45
+    TMINUS  shift, and go to state 46
+    TMUL    shift, and go to state 47
+    TDIV    shift, and go to state 48
+
+    $default  reduce using rule 34 (expr)
+
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53
+
+
+state 64
+
+   33 expr: expr . equ_op expr
+   34     | expr . cmp_op expr
+   35     | expr . add_op expr
+   35     | expr add_op expr .
+   36     | expr . mul_op expr
+
+    TMUL  shift, and go to state 47
+    TDIV  shift, and go to state 48
+
+    $default  reduce using rule 35 (expr)
+
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53
+
+
+state 65
+
+   33 expr: expr . equ_op expr
+   34     | expr . cmp_op expr
+   35     | expr . add_op expr
+   36     | expr . mul_op expr
+   36     | expr mul_op expr .
+
+    $default  reduce using rule 36 (expr)
+
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53
+
+
+state 66
+
+   18 case: TCASE expr TEQUAL expr . TENDL
+   33 expr: expr . equ_op expr
+   34     | expr . cmp_op expr
+   35     | expr . add_op expr
+   36     | expr . mul_op expr
+
+    TCEQ    shift, and go to state 39
+    TCNE    shift, and go to state 40
+    TCLT    shift, and go to state 41
+    TCLE    shift, and go to state 42
+    TCGT    shift, and go to state 43
+    TCGE    shift, and go to state 44
+    TPLUS   shift, and go to state 45
+    TMINUS  shift, and go to state 46
+    TMUL    shift, and go to state 47
+    TDIV    shift, and go to state 48
+    TENDL   shift, and go to state 71
+
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53
+
+
+state 67
+
+   10 type: TLPAREN type TRPAREN .
+
+    $default  reduce using rule 10 (type)
+
+
+state 68
+
+   11 type: type . TARROW type
+   11     | type TARROW type .
+
+    TARROW  shift, and go to state 57
+
+    $default  reduce using rule 11 (type)
+
+
+state 69
+
+   30 expr: ident TLPAREN call_args TRPAREN .
+
+    $default  reduce using rule 30 (expr)
+
+
+state 70
+
+   40 call_args: call_args TCOMMA . expr
+
+    TIDENTIFIER  shift, and go to state 1
+    TINTEGER     shift, and go to state 17
+    TDOUBLE      shift, and go to state 18
+    TBOOL        shift, and go to state 19
+    TLPAREN      shift, and go to state 26
+
+    ident    go to state 27
+    numeric  go to state 28
+    expr     go to state 72
+
+
+state 71
+
+   18 case: TCASE expr TEQUAL expr TENDL .
+
+    $default  reduce using rule 18 (case)
+
+
+state 72
+
+   33 expr: expr . equ_op expr
+   34     | expr . cmp_op expr
+   35     | expr . add_op expr
+   36     | expr . mul_op expr
+   40 call_args: call_args TCOMMA expr .
+
+    TCEQ    shift, and go to state 39
+    TCNE    shift, and go to state 40
+    TCLT    shift, and go to state 41
+    TCLE    shift, and go to state 42
+    TCGT    shift, and go to state 43
+    TCGE    shift, and go to state 44
+    TPLUS   shift, and go to state 45
+    TMINUS  shift, and go to state 46
+    TMUL    shift, and go to state 47
+    TDIV    shift, and go to state 48
+
+    $default  reduce using rule 40 (call_args)
+
+    equ_op  go to state 50
+    cmp_op  go to state 51
+    add_op  go to state 52
+    mul_op  go to state 53

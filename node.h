@@ -10,9 +10,8 @@
 #include <memory>
 #include <sstream>
 #include <unordered_map>
-#include "parser.hpp"
 
-#define YYDEBUG 1
+
 
 class CodeGenContext;
 class NStatement;
@@ -56,7 +55,7 @@ inline std::ostream& operator<<(std::ostream& os, const Node& node) {
   return os;
 }
 
-class NPattern : public Node {
+class NPattern : public virtual Node {
 //  virtual  bool is_blank() {
 //    return false;
 //  }
@@ -70,10 +69,10 @@ class NBlank : public NPattern {
 
 };
 
-class NExpression : public Node {
+class NExpression : public virtual Node {
 public:
   typedef std::unordered_map<std::string, std::string> NameToNameMap;
-  void RenameIds(NameToNameMap const & map) = 0;
+  virtual void RenameIds(NameToNameMap const & map) = 0;
 };
 
 class NStatement : public Node {
@@ -81,6 +80,16 @@ class NStatement : public Node {
 
 class NConstantBase : public NExpression, public NPattern {
 };
+
+namespace std {
+  inline std::string to_string(bool b) {
+    if(b) {
+      return "true";
+    } else {
+      return "false";
+    }
+  }
+}
 
 template<typename T>
 class NConstant : public NConstantBase {
@@ -94,7 +103,7 @@ public:
 
   NConstant& operator=(NConstant&&) = default;
 
-  T& value() const {
+  T value() const {
     return value_;
   }
 
@@ -111,10 +120,9 @@ protected:
   T value_;
 
   virtual void TranslateTo(std::ostream& os) const override {
-    os << value();
+    os << std::to_string(value());
   }
 };
-
 typedef NConstant<long long> NInteger;
 typedef NConstant<double> NDouble;
 typedef NConstant<bool> NBool;
@@ -149,7 +157,7 @@ public:
   virtual size_t args_num() const = 0;
 
   virtual bool is_functional() const {
-    return args_num() == 0;
+    return args_num() != 0;
   }
 };
 
@@ -185,7 +193,7 @@ protected:
         };
 
     if(primitive_type_map.count(name_)) {
-       os << primitive_type_map[name_];
+       os << primitive_type_map.at(name_);
     } else {
       throw std::logic_error("Invalid primitive type: " + name_);
     }
@@ -245,9 +253,14 @@ protected:
   std::unique_ptr<NType> type_;
 
   virtual void TranslateTo(std::ostream& os) const override {
-    os << "std::function<";
-    os << *type_;
-    os << "> " << *id_ << ";\n";
+    if(!type_->is_functional()) {
+      os << "std::function<";
+      os << *type_;
+      os << "()>";
+    } else {
+      os << *type_;
+    }
+    os << " " << *id_ << ";\n";
   }
 
 };
@@ -272,7 +285,7 @@ public:
   }
 
   void RenameIds(NameToNameMap const& map) {
-    for(auto expr_ptr : arguments_) {
+    for(auto const &expr_ptr : arguments_) {
       expr_ptr->RenameIds(map);
     }
   }
@@ -287,6 +300,7 @@ protected:
         os << ", ";
       }
     }
+    os << ")";
   }
 
   std::unique_ptr<NIdentifier> id_;
@@ -306,22 +320,10 @@ public:
     rhs->RenameIds(map);
   }
 protected:
+  static const std::unordered_map<int, std::string> token_to_operator;
   virtual void TranslateTo(std::ostream& os) const override {
-    static const std::unordered_map<int, std::string> token_to_operator =
-        {
-            {TCEQ  ,"==" },
-            {TCNE  ,"!=" },
-            {TCLT  ,"<" },
-            {TCLE  ,"<=" },
-            {TCGT  ,">" },
-            {TCGE  ,">=" },
-            {TDIV  ,"/" },
-            {TMUL  ,"*" },
-            {TMINUS,"-" },
-            {TPLUS ,"+" }
-        };
     if(token_to_operator.count(op)) {
-      os << "(" << *lhs << ") " << token_to_operator.at(op) << " (" << *rhs << ")";
+      os << "(" << *lhs << " " << token_to_operator.at(op) << " " << *rhs << ")";
     } else {
       throw std::logic_error("Unknown operator: " + std::to_string(op));
     }
@@ -356,9 +358,21 @@ public:
 protected:
   std::unique_ptr<NIdentifier> id_;
   PatternList patterns_;
-  static const std::string intend("  ");
+  static const std::string intend;
   static std::string GetArgByNum(size_t arg_num) {
     return "arg" + std::to_string(arg_num);
+  }
+
+  void TranslatePatternExprTo(std::ostream & os) const {
+    os << "true";
+    for (size_t i_arg = 0; i_arg < patterns_.size(); ++i_arg) {
+      if(auto * constant_ptr = dynamic_cast<NConstantBase *>(patterns_[i_arg].get())) {
+        os << " & (";
+        os << GetArgByNum(i_arg) << " == " << *constant_ptr;
+        os << ")";
+      }
+    }
+
   }
 };
 
@@ -392,6 +406,13 @@ public:
 protected:
   std::unique_ptr<NExpression> expression_;
 
+  virtual void TranslateTo(std::ostream& os) const override {
+    os << intend << "if (";
+    TranslatePatternExprTo(os);
+    os << ") {\n";
+    os << intend << intend << "return " << *expression_ << ";\n";
+    os << intend <<  "}\n";
+  }
 
 };
 
@@ -418,15 +439,19 @@ protected:
   CaseToExprList case_to_expr_;
 
   virtual void TranslateTo(std::ostream& os) const override {
+    os << intend << "if (";
+    TranslatePatternExprTo(os);
+    os << ") { \n";
     for(auto const & case_to_expr: case_to_expr_) {
       TranslateCaseToExpr(os, case_to_expr);
     }
+    os << intend <<  "}\n";
   }
 
   virtual void TranslateCaseToExpr(std::ostream & os, CaseToExpr const & case_to_expr) const  {
-    os << intend << "if (" << *case_to_expr.first << ") {"
-    << intend << intend << "return " << *case_to_expr.second << ";"
-    << intend << "}\n";
+    os << intend  << intend << "if (" << *case_to_expr.first << ") {\n"
+       << intend  << intend << intend << "return " << *case_to_expr.second << ";\n"
+       << intend  << intend << "}\n";
   }
 
 

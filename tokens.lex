@@ -17,7 +17,7 @@
 ^[ \t]+                  yylval.intval = yyleng; return TINTEND;
 [\n]                    return TOKEN(TENDL);
 [ \t]                   ;
-"bool"|"false"          SAVE_STRING; return TBOOL;
+"true"|"false"          SAVE_STRING; return TBOOL;
 [a-z][a-zA-Z0-9_]*      SAVE_STRING; return TIDENTIFIER;
 [A-Z][a-zA-Z0-9_]*      SAVE_STRING; return TTNAME;
 [0-9]+\.[0-9]*          SAVE_STRING; return TDOUBLE;

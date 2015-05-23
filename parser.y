@@ -1,7 +1,8 @@
 %{
+  #define YYDEBUG 1
 	#include "node.h"
-        #include <cstdio>
-        #include <cstdlib>
+  #include <cstdio>
+  #include <cstdlib>
 	std::unique_ptr<StatementList> program; /* the top level root node of our final AST */
 
 	extern int yylex();
@@ -63,11 +64,11 @@ yyprint ( FILE *file, int type, YYSTYPE value) {
 %type <case_to_expr> case
 %type <case_list> case_list
 %type <def> func_pattern
-%type <token> bin_operator 
+%type <token> equ_op cmp_op add_op mul_op
 /* Operator precedence for mathematical operators */
 
 %right TARROW
-%left TCEQ  TCNE 
+%left TCEQ TCNE
 %left TCLT  TCLE  TCGT  TCGE
 %left TPLUS TMINUS
 %left TMUL TDIV
@@ -122,7 +123,6 @@ type
 func_pattern_args 
   : func_pattern_args  func_pattern_arg { $1->emplace_back($2); }
   | func_pattern_arg { $$ = new PatternList(); $$->emplace_back($1); }
-  | /*empty*/ {$$ = new PatternList();}
   ;
 
 func_pattern_arg 
@@ -157,7 +157,11 @@ func_pattern
     {
       $$ = new NDefinition($1, $2); 
     }
-  ; 
+  | ident
+    {
+      $$ = new NDefinition($1, new PatternList());
+    }
+  ;
 
 func_bind  
   : func_pattern  TEQUAL expr TENDL
@@ -213,7 +217,10 @@ expr
     }
   | ident {$$ = $<expr>1;}
   | numeric
-  | expr bin_operator expr { $$ = new NBinaryOperator($1, $2, $3); }
+  | expr equ_op expr { $$ = new NBinaryOperator($1, $2, $3); } %prec TCEQ
+  | expr cmp_op expr { $$ = new NBinaryOperator($1, $2, $3); } %prec TCLT
+  | expr add_op expr { $$ = new NBinaryOperator($1, $2, $3); } %prec TPLUS
+  | expr mul_op expr { $$ = new NBinaryOperator($1, $2, $3); } %prec TMUL
   | TLPAREN expr TRPAREN { $$ = $2; }
   ;
 
@@ -222,7 +229,10 @@ call_args : /*blank*/  { $$ = new ExpressionList(); }
   | call_args TCOMMA expr  { $1->emplace_back($3); }
   ;
 
-bin_operator : TCEQ | TCNE | TCLT | TCLE | TCGT | TCGE
-             | TMINUS | TPLUS | TDIV | TMUL ;
+equ_op: TCEQ | TCNE ;
+cmp_op: TCLT  | TCLE  | TCGT  | TCGE;
+add_op: TPLUS | TMINUS;
+mul_op: TMUL | TDIV;
+
 
 %%
