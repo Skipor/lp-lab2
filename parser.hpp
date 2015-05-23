@@ -98,13 +98,14 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 12 "parser.y"
+#line 20 "parser.y"
 {
 	NExpression *expr;
   ExpressionList * exprs;
 	NStatement *stmt;
   StatementList * stmts;
 	NIdentifier *ident;
+  NPrimitiveType	* name_of_type;
 	std::string *string;
   NPattern * pattern;
   PatternList * patterns;
@@ -116,7 +117,7 @@ typedef union YYSTYPE
 	int token;
 }
 /* Line 1529 of yacc.c.  */
-#line 120 "parser.hpp"
+#line 121 "parser.hpp"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

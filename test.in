@@ -1,0 +1,43 @@
+fac::Integer -> Integer
+fac 0 = 1
+fac n | n > 0 = n * fac(n - 1)
+      | n < 0 = 0
+
+not :: Bool -> Bool
+not true = false
+not x | x == false = true
+
+and :: Bool -> Bool -> Bool
+and true true = true
+and _ _ = false
+
+or :: Bool -> Bool -> Bool
+or false false = false
+or _ _ = true
+
+ifInt :: Bool -> Integer -> Integer -> Integer
+ifInt true a _ = a
+ifInt false _ b = b
+
+
+applInt :: (Integer -> Integer) -> Integer->Integer -> Integer
+applInt f a b = f(a,b)
+
+mod :: Integer -> Integer -> Integer
+mod a b = a - a / b * b
+
+isPrime :: Integer -> Bool
+isPrime n | n < 2 = false
+
+isPrime n = isNoneDivideBefore(n ,(n - 1))
+
+
+isNoneDivideBefore n i | i < 2 = true
+                       | true = and(mod(n,i) != 0, isNodeDivideBefore(n, i-1))
+
+main :: Integer
+main = isPrime(17)
+
+
+
+

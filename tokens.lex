@@ -4,13 +4,19 @@
 #include "parser.hpp"
 #define SAVE_STRING yylval.string = new std::string(yytext, yyleng)
 #define TOKEN(t) (yylval.token = t)
-extern "C" int yywrap() { }
 %}
 
+%option noyywrap
+%option debug
+
 %%
+<<EOF>> { static int once = 0; return once++ ? 0 : TENDL; }
+
 "//"[^\n]*              ;
+^[ \t]*[\n]             ;
 ^[ \t]+                  yylval.intval = yyleng; return TINTEND;
 [\n]                    return TOKEN(TENDL);
+[ \t]                   ;
 "bool"|"false"          SAVE_STRING; return TBOOL;
 [a-z][a-zA-Z0-9_]*      SAVE_STRING; return TIDENTIFIER;
 [A-Z][a-zA-Z0-9_]*      SAVE_STRING; return TTNAME;
@@ -34,6 +40,7 @@ extern "C" int yywrap() { }
 "-"                     return TOKEN(TMINUS);
 "*"                     return TOKEN(TMUL);
 "/"                     return TOKEN(TDIV);
-.                       printf("Unknown token!\n"); yyterminate();
+
+.                       printf("UNKNOWN TOKEN\n"); yyterminate();
 
 %%

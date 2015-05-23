@@ -1,18 +1,16 @@
 #include "node.h"
 #include <iostream>
 
+extern std::unique_ptr<StatementList> program; /* the top level root node of our final AST */
+extern int yydebug;
+extern int yyparse();
+
 using namespace std;
-
-
-int main() {
-  NPattern * p = new NBool(true);
-  NBlank * b = dynamic_cast<NBlank * > (p);
-  if(b != nullptr) {
-    cout << "Is blank" << endl;
-  }
-
-
-
-  cout << "Hello, World!" << endl;
+int main(int argc, char **argv)
+{
+  cout << "BEFORE PARSE" << endl;
+  yydebug = true;
+  yyparse();
+  cout << "AFTER PARSE" << endl;
   return 0;
 }

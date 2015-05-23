@@ -2,10 +2,18 @@
 	#include "node.h"
         #include <cstdio>
         #include <cstdlib>
-	std::unique_ptr<StatementList> program(); /* the top level root node of our final AST */
+	std::unique_ptr<StatementList> program; /* the top level root node of our final AST */
 
 	extern int yylex();
 	void yyerror(const char *s) { std::printf("Error: %s\n", s);std::exit(1); }
+
+/* #define YYPRINT(file, type, value)   yyprint (file, type, value)
+static void
+yyprint ( FILE *file, int type, YYSTYPE value) {
+  if (type == TBOOL || type == TIDENTIFIER || type == TTNAME || type == TDOUBLE || type == TINTEGER) {
+  fprintf (file, " %s", (*value.string).c_str());
+  }
+} */
 %}
 
 /* Represents the many different ways we can access our data */
@@ -15,6 +23,7 @@
 	NStatement *stmt;
   StatementList * stmts;
 	NIdentifier *ident;
+  NPrimitiveType	* name_of_type;
 	std::string *string;
   NPattern * pattern;
   PatternList * patterns;
@@ -43,7 +52,7 @@
    calling an (NIdentifier*). It makes the compiler happy.
  */
 %type <ident> ident
-%type <typename> typename
+%type <name_of_type> name_of_type
 %type <type> type 
 %type <pattern> func_pattern_arg
 %type <patterns> func_pattern_args
@@ -65,6 +74,11 @@
 
 
 %start program
+%verbose
+
+%printer { fprintf(yyoutput, "%s", $$->c_str()); } TDOUBLE TINTEGER TTNAME TIDENTIFIER
+
+
 
 %%
 
@@ -76,13 +90,14 @@ program
 stmts 
   : stmt { $$ = new StatementList(); $$->emplace_back($<stmt>1); }
   | stmts stmt { $1->emplace_back($<stmt>2); }
+  | stmts TENDL
   ;
 
 stmt 
   : type_decl | func_bind | func_case ;
 
 type_decl 
-  : typename TTYPEOF type TENDL
+  : ident TTYPEOF type TENDL
     { 
       std::reverse($3->types().begin(),$3->types().end());
       $$ = new NTypeDeclaration($1, $3);
@@ -95,7 +110,7 @@ type
       $$ = $3;
       $$->types().emplace_back($1);
     }
-  | typename 
+  | name_of_type
     { 
       $$ = new NType();
       $$->types().emplace_back($1);
@@ -107,23 +122,19 @@ type
 func_pattern_args 
   : func_pattern_args  func_pattern_arg { $1->emplace_back($2); }
   | func_pattern_arg { $$ = new PatternList(); $$->emplace_back($1); }
-  | /*empty*/ {$$ == new PatternList();}
+  | /*empty*/ {$$ = new PatternList();}
   ;
 
 func_pattern_arg 
   : TBLANK {$$ = new NBlank();}
   | numeric {$$ = dynamic_cast<NPattern*>($1);}
-  | TIDENTIFIER
-    { 
-      $$ = new VariableList();
-      $$->push_back($<const_decl>1); 
-    }
+  | ident {$$ = dynamic_cast<NPattern*>($1);}
   ;
 
 case 
   : TCASE expr TEQUAL expr TENDL
     {
-      $$ = new CaseToExpr(std::unique_ptr<NExpression>($2), std::unique_ptr<NExpression>($3));
+      $$ = new CaseToExpr(std::unique_ptr<NExpression>($2), std::unique_ptr<NExpression>($4));
     }
   ;
 
@@ -131,18 +142,20 @@ case_list
   : case 
     {
       $$ = new CaseToExprList();
-      $$->emplace_back($1);
+      $$->emplace_back(std::move(*$1));
+      delete $1;
     }
   | case_list TINTEND case 
     {
-      $1->emplace_back($3);
+      $1->emplace_back(std::move(*$3));
+      delete $3;
     }
   ;
 
 func_pattern 
   : ident func_pattern_args
     {
-      $$ = new NDefintion($1, $2); 
+      $$ = new NDefinition($1, $2); 
     }
   ; 
 
@@ -167,10 +180,10 @@ ident
       delete $1; 
     }
   ;
-typename 
+name_of_type
   : TTNAME 
     {
-      $$ = new NPrimitiveType(std::move(*$1)); 
+      $$ = new NPrimitiveType(std::move(*$1));
       delete $1;
     }
   ;
@@ -196,8 +209,7 @@ numeric
 expr 
   : ident TLPAREN call_args TRPAREN 
     {
-      $$ = new NMethodCall($1, $3);
-      delete $3;
+      $$ = new NFunctionCall($1, $3);
     }
   | ident {$$ = $<expr>1;}
   | numeric

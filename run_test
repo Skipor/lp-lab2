@@ -1,0 +1,2 @@
+#!/bin/bash
+cat ./test.in | ./bin/Debug/lp_lab2
